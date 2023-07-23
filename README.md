@@ -1,2 +1,7 @@
-# msed
-Multi-Scale Event Detector
+# ```Multi-Scale Event Detection (MSED)```
+
+**Team** : Diego Silva de Salles (CEFET/RJ), Eduardo Ogasawara (CEFET/RJ), Eduardo Bezerra (CEFET/RJ), Rafaelli Coutinho (CEFET/RJ), Carlos E. Mello (UNIRIO), Cristiane Gea (CEFET/RJ). 
+
+**Abstract**: Information published in the communication media, such as government transitions, economic crises, or corruption scandals, is an external factor associated with financial time series. These factors can be related to events of increased uncertainty in the time series. External factors can have different cycles of fluctuations, affecting a time series over months or years. In particular, these external factors can raise the perceived financial risk and manifest as two main events in the time series: anomalies and change points. Discovering these events in the financial time series is challenging but can help minimize the investment risk. This paper presents Multi-Scale Event Detect (MSED), a technique for detecting events in financial time series. It compares the events found by the detection methods in the Intrinsic Mode Function (IMF) components with the external factors labels obtained through the Economic Policy Uncertainty (EPU) index. Our results identified a correlation between the uncertainty variations present in the EPU, with events detected in a financial time series. Using the proposed approach, it is possible to determine the most predominant nature of events based on the uncertainty variations presented in the EPU series. This information allows to specify a set of time series where the influence of uncertainty generates acceptable events for a certain investment profile, thus mitigating the risk in the investment to which it is intended to be exposed.
+
+**Acknowledgments**: The authors thank CNPq, CAPES, and FAPERJ for partially sponsoring this research.

@@ -63,18 +63,9 @@ results <- multi_scale_event_detect(
   soft_window = 20
 )
 
-
-
-
-
-
-
-
 garch11 <- 
   rugarch::ugarchspec(
     variance.model = list(model = "sGARCH", garchOrder = c(1, 1)),  mean.model = list(armaOrder = c(1, 1), include.mean = TRUE), distribution.model = "norm")
-
-
 
 df <- data.frame(time=serie_df$time, x=serie_df$value)
 df <- drop_na(df)
@@ -90,11 +81,7 @@ events_scp <- evtdet.seminalChangePoint2(df, w=40,mdl=linreg,na.action=na.omit)
 metric=c("accuracy","sensitivity","specificity","precision",
          "recall","F1","balanced_accuracy")
 print(evtplot(df, events_scp,reference))
+
 metrics <- soft_evaluate(events_scp, reference, k=5) 
-
-
 metrics <-  soft_evaluate(events_garch, reference, k =10)
-
-
-
 metrics <-  soft_evaluate(events_garch, reference, k =15)

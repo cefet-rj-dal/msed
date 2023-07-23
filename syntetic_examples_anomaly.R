@@ -1,29 +1,28 @@
-library(xts)
 source("multi-scale-detect.R")
 source("load_time_series.R")
+
 library(tidyr)
+library(devtools)
+library(tsbox)
+library(readxl)
+library(slider)
+library(tidyr)
+library(xts)
+
+
+library(magrittr) # needs to be run every time you start R and want to use %>%
+library(dplyr)    # alternatively, this also loads %>%
 install.packages('devtools')
 library(devtools)
 source("harbinger/examples/load_harbinger.R")
 source("harbinger.R")
 devtools::install_github("cefet-rj-dal/harbinger")
-library(tsbox)
-library(readxl)
-library(slider)
-source("utils.R")
-source("harbinger.R")
-library(tidyr)
+
 load_harbinger() 
 load_library("reticulate")
 source("harbinger/examples/ts_tlstm.R")
 reticulate::source_python("harbinger/examples/ts_tlstm.py")
 data(har_examples)
-
-###########################################  Anomaly
-
-
-#lstm
-# anomaly MSED
 
 
 limit_ri_sup <- 2.14 # limite sup definido para obtenção do RI
@@ -77,9 +76,6 @@ results <- multi_scale_event_detect(
   rf_dataframe = detect_anomalies(time_series),
   soft_window = 20
 )
-
-#lstm
-
 
 model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
 model <- fit(model, serie_df$value)
@@ -136,5 +132,3 @@ metric=c("accuracy","sensitivity","specificity","precision",
 
 print(evtplot(serie_df, events_an,reference))
 metrics <- soft_evaluate(events_an, reference, k=20) 
-
-

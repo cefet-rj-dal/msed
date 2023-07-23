@@ -156,4 +156,3 @@ detect_change_points <- function(x, cpts) {
 debug(detect_change_points)
 df_ref_cp <- detect_change_points(x, cpts)
 head(df_ref_cp)
-
