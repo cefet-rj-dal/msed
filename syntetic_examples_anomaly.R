@@ -1,28 +1,32 @@
+#install.packages('devtools')
+#devtools::install_github("cefet-rj-dal/harbinger", force = TRUE)
+
 source("multi-scale-detect.R")
 source("load_time_series.R")
 
-library(tidyr)
-library(devtools)
+library(magrittr) 
+library(dplyr)   
+library(ggplot2)
 library(tsbox)
 library(readxl)
 library(slider)
 library(tidyr)
-library(xts)
-
-
-library(magrittr) # needs to be run every time you start R and want to use %>%
-library(dplyr)    # alternatively, this also loads %>%
-install.packages('devtools')
 library(devtools)
-source("harbinger/examples/load_harbinger.R")
-source("harbinger.R")
-devtools::install_github("cefet-rj-dal/harbinger")
 
-load_harbinger() 
+source("harbinger/examples/load_harbinger.R")
+folder_path <- "harbinger/R"
+files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE)
+for (file in files) {
+  source(file)
+}
 load_library("reticulate")
 source("harbinger/examples/ts_tlstm.R")
 reticulate::source_python("harbinger/examples/ts_tlstm.py")
+load_harbinger() 
 data(har_examples)
+
+
+
 
 
 limit_ri_sup <- 2.14 # limite sup definido para obtenção do RI
@@ -34,9 +38,6 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 reference <-df_anomalies
 serie_df = df_series_anomalies
 
-
-
-
 ### window 5
 results <- multi_scale_event_detect(
   serie = serie_df,
@@ -45,13 +46,13 @@ results <- multi_scale_event_detect(
   frequency_date = frequency_date,
   start_date = start_date,
   type_events = list("anomaly"),
-  rf_dataframe = detect_anomalies(time_series),
+  rf_dataframe = reference,
   soft_window = 5
 )
 
+sprintf("Method MSED Metrics: F1 %s | Precision %s | Recall %s to softwindow 5", results["F1"], results["precision"], results["recall"])
 
 ### window 10
-debug(multi_scale_event_detect)
 results <- multi_scale_event_detect(
   serie = serie_df,
   limit_ri_sup = limit_ri_sup,
@@ -63,6 +64,7 @@ results <- multi_scale_event_detect(
   soft_window = 10
 )
 
+sprintf("Method MSED Metrics: F1 %s | Precision %s | Recall %s to softwindow 10", results["F1"], results["precision"], results["recall"])
 
 
 #### window 20
@@ -77,10 +79,14 @@ results <- multi_scale_event_detect(
   soft_window = 20
 )
 
-model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
-model <- fit(model, serie_df$value)
+sprintf("Method MSED Metrics: F1 %s | Precision %s | Recall %s to softwindow 20", results["F1"], results["precision"], results["recall"])
 
-detection <- detect(model, serie_df$value)
+
+serie_df <- data.frame(time = serie_df$time, serie = serie_df$value)
+
+model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
+model <- fit(model, serie_df$serie)
+detection <- detect(model, serie_df$serie)
 
 detection[is.na(detection)] <- FALSE
 
@@ -95,40 +101,39 @@ convert_boolean_df <- function(df) {
 ds <- convert_boolean_df(detection)
 events <- ds |> dplyr::filter(event==TRUE)
 print(events)
+metrics <- soft_evaluate(events =events, reference = reference, k = 5)
+evtplot(serie_df, events, reference)
+sprintf("Method lstm Metrics: F1 %s | Precision %s | Recall %s to softevaluate 5", metrics["F1"], metrics["precision"], metrics["recall"])
+
+
+
 metrics <- soft_evaluate(events =events, reference = reference, k = 10)
 evtplot(serie_df, events, reference)
 
-
-
-metrics <- soft_evaluate(events =events, reference = reference, k = 5)
-evtplot(serie_df, events, reference)
-
+sprintf("Method lstm Metrics: F1 %s | Precision %s | Recall %s to softevaluate 10", metrics["F1"], metrics["precision"], metrics["recall"])
 
 metrics <- soft_evaluate(events =events, reference = reference, k = 20)
+sprintf("Method lstm Metrics: F1 %s | Precision %s | Recall %s to softevaluate 20", metrics["F1"], metrics["precision"], metrics["recall"])
+
 evtplot(serie_df, events, reference)
 
 
 # anomalie package
 
-serie_df <- data.frame(time=serie_df$time, x=serie_df$value)
 
-events_an <- evtdet.an_outliers(serie_df, w=5, alpha=1.5)
-metric=c("accuracy","sensitivity","specificity","precision",
-         "recall","F1","balanced_accuracy")
-print(evtplot(serie_df, events_an,reference))
-metrics <- soft_evaluate(events_an, reference, k=5) 
-
-events_an <- evtdet.an_outliers(serie_df, w=10, alpha=1.5)
-metric=c("accuracy","sensitivity","specificity","precision",
-         "recall","F1","balanced_accuracy")
-
-print(evtplot(serie_df, events_an,reference))
-metrics <- soft_evaluate(events_an, reference, k=10) 
+model <- fbiad()
+model <- fit(model, serie_df$serie)
+detection <- detect(model, serie_df$serie)
+print(detection |> dplyr::filter(event==TRUE))
+rf_boolean_list <- as.logical(reference$value)
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=5))
+sprintf("Method FBIAD: F1 %s | Precision %s | Recall %s to softwindow 5", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
 
 
-events_an <- evtdet.an_outliers(serie_df,w=20, alpha=1.5)
-metric=c("accuracy","sensitivity","specificity","precision",
-         "recall","F1","balanced_accuracy")
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=10))
+sprintf("Method FBIAD: F1 %s | Precision %s | Recall %s to softwindow 10", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
 
-print(evtplot(serie_df, events_an,reference))
-metrics <- soft_evaluate(events_an, reference, k=20) 
+
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=20))
+sprintf("Method FBIAD: F1 %s | Precision %s | Recall %s to softwindow 20", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+

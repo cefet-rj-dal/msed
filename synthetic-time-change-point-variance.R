@@ -1,9 +1,24 @@
-library(xts)
 source("multi-scale-detect.R")
 source("load_time_series.R")
-library(ggplot2)
-library(dplyr)
+source("harbinger-v1.R")
 
+library(magrittr) 
+library(dplyr)   
+library(ggplot2)
+library(tsbox)
+library(readxl)
+library(slider)
+library(tidyr)
+library(devtools)
+
+source("harbinger/examples/load_harbinger.R")
+folder_path <- "harbinger/R"
+files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE)
+for (file in files) {
+  source(file)
+}
+
+data(har_examples)
 
 limit_ri_sup <- 2.14 # limite sup definido para obtenção do RI
 limit_ri_inf <- 1.50 # limite inf definido para obtenção do RI
@@ -14,17 +29,6 @@ trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 reference <-variance_change_df
 serie_df <-df_serie_amplitude
 
-#debug(multi_scale_event_detect)
-results <- multi_scale_event_detect(
-  serie = serie_df,
-  limit_ri_sup = limit_ri_sup,
-  limit_ri_inf = limit_ri_inf,
-  frequency_date = frequency_date,
-  start_date = start_date,
-  type_events = list("cp_variance"),
-  rf_dataframe = variance_change_df,
-  soft_window = 5
-)
 
 ######################### Change Variance
 results <- multi_scale_event_detect(
@@ -39,6 +43,7 @@ results <- multi_scale_event_detect(
 )
 
 
+sprintf("Method MSED Metrics: F1 %s | Precision %s | Recall %s to softwindow 5", results["F1"], results["precision"], results["recall"])
 
 results <- multi_scale_event_detect(
   serie = serie_df,
@@ -51,6 +56,7 @@ results <- multi_scale_event_detect(
   soft_window = 10
 )
 
+sprintf("Method MSED Metrics: F1 %s | Precision %s | Recall %s to softwindow 10", results["F1"], results["precision"], results["recall"])
 
 results <- multi_scale_event_detect(
   serie = serie_df,
@@ -63,25 +69,43 @@ results <- multi_scale_event_detect(
   soft_window = 20
 )
 
-garch11 <- 
-  rugarch::ugarchspec(
-    variance.model = list(model = "sGARCH", garchOrder = c(1, 1)),  mean.model = list(armaOrder = c(1, 1), include.mean = TRUE), distribution.model = "norm")
+sprintf("Method MSED Metrics: F1 %s | Precision %s | Recall %s to softwindow 20", results["F1"], results["precision"], results["recall"])
 
-df <- data.frame(time=serie_df$time, x=serie_df$value)
-df <- drop_na(df)
-events_garch <- evtdet.garch_volatility_outlier(df, spec=garch11,alpha=1.5)
-metric=c("accuracy","sensitivity","specificity","precision",
-         "recall","F1","balanced_accuracy")
-print(evtplot(df, events_garch,reference))
-metrics <- soft_evaluate(events_garch, reference, k =20)
+serie_df <- data.frame(time=serie_df$time, serie=serie_df$value, type = "change point")
 
-df <- data.frame(time=serie_df$time, serie=serie_df$value, type = "change point")
+##### GARCH
+model <- har_garch()
+model <- fit(model, serie_df$serie)
+detection <- detect(model, serie_df$serie)
+print(detection |> dplyr::filter(event==TRUE))
+rf_boolean_list <- as.logical(reference$value)
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=5))
 
-events_scp <- evtdet.seminalChangePoint2(df, w=40,mdl=linreg,na.action=na.omit)
-metric=c("accuracy","sensitivity","specificity","precision",
-         "recall","F1","balanced_accuracy")
-print(evtplot(df, events_scp,reference))
+sprintf("Method GARCH: F1 %s | Precision %s | Recall %s to softwindow 5", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
 
-metrics <- soft_evaluate(events_scp, reference, k=5) 
-metrics <-  soft_evaluate(events_garch, reference, k =10)
-metrics <-  soft_evaluate(events_garch, reference, k =15)
+
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=10))
+sprintf("Method GARCH: F1 %s | Precision %s | Recall %s to softwindow 10", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+
+
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=20))
+sprintf("Method GARCH: F1 %s | Precision %s | Recall %s to softwindow 20", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+
+##### Method Seminal Change Point
+model <- change_point(sw=90)
+model <- fit(model, serie_df$serie)
+detection <- detect(model, serie_df$serie)
+print(detection |> dplyr::filter(event==TRUE))
+rf_boolean_list <- as.logical(reference$value)
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=5))
+
+sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 5", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+
+
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=10))
+sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 10", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+
+
+soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=20))
+sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 20", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+

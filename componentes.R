@@ -1,15 +1,7 @@
-library(dplyr)
-library(ggplot2)
 require(lubridate)
 library(hht)
-library(xts)
-library(tsbox)
-library(slider)
-library(tidyverse)
-library(magrittr)
 
 source("moghtaderi-filter.R")
-
 
 ceemd_trend_filter <- function(serie=NULL, noise.amp = 6.4e-07 , trials = 100, limit_ri_sup = 2.14, limit_ri_inf = 1.50, frequency_date=12, start_date=c(2004,1)
                                , stop_rule="type1"){

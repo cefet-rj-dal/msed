@@ -173,7 +173,7 @@ evtdet.seminalChangePoint <- function(data,...){
     errors <- do.call(rbind,apply(serie,1,analyze_window))
     
     #===== Boxplot analysis of results ======
-    outliers.index <- function(data, alpha = 1.5){
+    outliers_v1.index <- function(data, alpha = 1.5){
       org = length(data)
       
       if (org >= 30) {
@@ -189,7 +189,7 @@ evtdet.seminalChangePoint <- function(data,...){
     }
     
     #Returns index of windows with outlier error differences
-    index.cp <- outliers.index(errors$mdl_dif)
+    index.cp <- outliers_v1.index(errors$mdl_dif)
     index.cp <- index.cp+floor(w/2)
     
     if(omit) index.cp <- non_nas[index.cp]
@@ -318,7 +318,7 @@ evtdet.seminalChangePoint2 <- function(data,...){
     }
     
     #===== Boxplot analysis of results ======
-    outliers.index <- function(data, alpha = 1.5){
+    outliers_v1.index <- function(data, alpha = 1.5){
       org = length(na.omit(data))
       index.cp = NULL
       
@@ -340,24 +340,24 @@ evtdet.seminalChangePoint2 <- function(data,...){
     
     
     #===== Analyzing all data windows ====== 
-    outliers <- NULL
+    outliers_v1 <- NULL
     for(i in 1:nrow(serie)){
       win_error <- analyze_window(serie[i,],mdl,...)
       
-      out <- outliers.index(win_error$mdl_dif) + (i-1)
+      out <- outliers_v1.index(win_error$mdl_dif) + (i-1)
       
-      outliers <- c(outliers, out)
+      outliers_v1 <- c(outliers_v1, out)
     }
     
-    out_freq <- as.data.frame(table(outliers))
+    out_freq <- as.data.frame(table(outliers_v1))
     
-    detection_freq <- cbind.data.frame(outliers=1:nrow(data))
+    detection_freq <- cbind.data.frame(outliers_v1=1:nrow(data))
     detection_freq <- merge(detection_freq,out_freq,all.x=TRUE,all.y=TRUE)
     detection_freq[is.na(detection_freq$Freq), "Freq"] <- 0
     
     #Returns index of observations with outlier detection frequences
-    index.cp <- outliers.index(detection_freq$Freq)
-    index.cp <- detection_freq$outliers[index.cp]
+    index.cp <- outliers_v1.index(detection_freq$Freq)
+    index.cp <- detection_freq$outliers_v1[index.cp]
     
     if(omit) index.cp <- non_nas[index.cp]
     
@@ -406,7 +406,7 @@ evtdet.changeFinder <- function(data,...){
     s[1:(3*P1)] <- NA
     
     #===== Boxplot analysis of results ======
-    outliers.index <- function(data, alpha = 3){
+    outliers_v1.index <- function(data, alpha = 3){
       org = length(na.omit(c(data)))
       index.cp = NULL
       
@@ -426,17 +426,17 @@ evtdet.changeFinder <- function(data,...){
       return (index.cp)
     }
     
-    outliers <- outliers.index(s)
-    outliers <- unlist(sapply(split(outliers, cumsum(c(1, diff(outliers) != 1))),
+    outliers_v1 <- outliers_v1.index(s)
+    outliers_v1 <- unlist(sapply(split(outliers_v1, cumsum(c(1, diff(outliers_v1) != 1))),
                               function(consec_values){
                                 tryCatch(consec_values[c(1:(length(consec_values)-(2*P1-1)))], 
                                          error = function(e) consec_values)
                               }
     )
     )
-    outliers <- na.omit(outliers)
+    outliers_v1 <- na.omit(outliers_v1)
     
-    #s[outliers.index(s)] <- NA
+    #s[outliers_v1.index(s)] <- NA
     
     y <- TSPred::mas(s,m1)
     
@@ -457,7 +457,7 @@ evtdet.changeFinder <- function(data,...){
     
     u <- TSPred::mas(u,m2)
     
-    cp <- outliers.index(u) + (m1-1) + (m2-1)
+    cp <- outliers_v1.index(u) + (m1-1) + (m2-1)
     
     cp <- unlist(sapply(split(cp, cumsum(c(1, diff(cp) != 1))),
                         function(consec_values){
@@ -467,14 +467,14 @@ evtdet.changeFinder <- function(data,...){
     )
     )
     
-    outliers <- outliers[!outliers %in% cp]
+    outliers_v1 <- outliers_v1[!outliers_v1 %in% cp]
     
     if(omit) {
-      outliers <- non_nas[outliers]
+      outliers_v1 <- non_nas[outliers_v1]
       cp <- non_nas[cp]
     }
     
-    events <- c(outliers,cp)
+    events <- c(outliers_v1,cp)
     events <- events[order(events)]
     anomalies <- cbind.data.frame(time=data[events,"time"],serie=serie_name,type="anomaly")
     anomalies$type <- as.character(anomalies$type)
@@ -527,10 +527,10 @@ optim.evtdet.changeFinder <- function(test,par_options=expand.grid(mdl_fun=c(ARI
 }
 
 
-evtdet.an_outliers <- function(data,...){
+evtdet.an_outliers_v1 <- function(data,...){
   if(is.null(data)) stop("No data was provided for computation",call. = FALSE)
   
-  an_outliers <- function(data,w=100,alpha=1.5,na.action=na.omit,...){
+  an_outliers_v1 <- function(data,w=100,alpha=1.5,na.action=na.omit,...){
     #browser()
     serie_name <- names(data)[-1]
     names(data) <- c("time","serie")
@@ -566,7 +566,7 @@ evtdet.an_outliers <- function(data,...){
     }
     
     #===== Boxplot analysis of results ======
-    outliers.boxplot <- function(data, alpha = 1.5){
+    outliers_v1.boxplot <- function(data, alpha = 1.5){
       org = nrow(data)
       cond <- rep(FALSE, org)
       if (org >= 30) {
@@ -583,12 +583,12 @@ evtdet.an_outliers <- function(data,...){
     sx <- data.frame(ts.sw(serie, w))
     ma <- apply(sx, 1, mean)
     sxd <- sx - ma
-    iF <- outliers.boxplot(sxd,alpha)
+    iF <- outliers_v1.boxplot(sxd,alpha)
     
     sx <- data.frame(ts.sw(rev(serie), w))
     ma <- apply(sx, 1, mean)
     sxd <- sx - ma
-    iB <- outliers.boxplot(sxd,alpha)
+    iB <- outliers_v1.boxplot(sxd,alpha)
     iB <- rev(iB)
     
     i <- iF | iB
@@ -605,7 +605,7 @@ evtdet.an_outliers <- function(data,...){
     return(anomalies)
   }
   
-  events <- evtdet(data,an_outliers,...)
+  events <- evtdet(data,an_outliers_v1,...)
   
   return(events)
 }
@@ -689,7 +689,7 @@ evtdet.mdl_outlier <- function(data,...){
     if(is.null(errors)) errors <- M1$residuals
     
     #===== Boxplot analysis of results ======
-    outliers.index <- function(data, alpha = 1.5){
+    outliers_v1.index <- function(data, alpha = 1.5){
       org = length(data)
       
       if (org >= 30) {
@@ -705,7 +705,7 @@ evtdet.mdl_outlier <- function(data,...){
     }
     
     #Returns index of windows with outlier error differences
-    index.cp <- outliers.index(errors,alpha)
+    index.cp <- outliers_v1.index(errors,alpha)
     
     if(omit) index.cp <- non_nas[index.cp]
     
@@ -752,7 +752,7 @@ evtdet.garch_volatility_outlier <- function(data,...){
     volatilities <- g[[value]]
     
     #===== Boxplot analysis of results ======
-    outliers.index <- function(data, alpha = 1.5){
+    outliers_v1.index <- function(data, alpha = 1.5){
       org = length(data)
       
       index.cp <- NULL
@@ -769,7 +769,7 @@ evtdet.garch_volatility_outlier <- function(data,...){
     }
     
     #Returns index of windows with outlier error differences
-    index.cp <- outliers.index(volatilities,alpha)
+    index.cp <- outliers_v1.index(volatilities,alpha)
     
     if(omit) index.cp <- non_nas[index.cp]
     
@@ -785,9 +785,9 @@ evtdet.garch_volatility_outlier <- function(data,...){
 }
 
 
-evtdet.outliers <- function(data,...){
+evtdet.outliers_v1 <- function(data,...){
   
-  outliers <- function(data,alpha=1.5){
+  outliers_v1 <- function(data,alpha=1.5){
     if(is.null(data)) stop("No data was provided for computation",call. = FALSE)
     
     #browser()
@@ -797,7 +797,7 @@ evtdet.outliers <- function(data,...){
     serie <- data$serie
     
     #===== Boxplot analysis of results ======
-    outliers.index <- function(data, alpha = 1.5){
+    outliers_v1.index <- function(data, alpha = 1.5){
       org = length(data)
       
       if (org >= 30) {
@@ -813,7 +813,7 @@ evtdet.outliers <- function(data,...){
     }
     
     #Returns index of windows with outlier error differences
-    index.out <- outliers.index(serie,alpha)
+    index.out <- outliers_v1.index(serie,alpha)
     
     anomalies <- cbind.data.frame(time=data[index.out,"time"],serie=serie_name,type="anomaly")
     names(anomalies) <- c("time","serie","type")
@@ -821,7 +821,7 @@ evtdet.outliers <- function(data,...){
     return(anomalies)
   }
   
-  events <- evtdet(data,outliers,...)
+  events <- evtdet(data,outliers_v1,...)
   
   return(events)
 }

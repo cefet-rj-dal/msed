@@ -1,6 +1,3 @@
-source("harbinger.R")
-
-
 
 add_row_component <- function(name, component, df_type, series) {
   series <- series[series$Data %in% component, ]
