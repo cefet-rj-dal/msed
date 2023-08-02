@@ -1,16 +1,12 @@
-#install.packages('devtools')
-#devtools::install_github("cefet-rj-dal/harbinger", force = TRUE)
-source("multi-scale-detect.R")
-source("load_time_series.R")
-
-library(magrittr) 
-library(dplyr)   
+library(magrittr) # needs to be run every time you start R and want to use %>%
+library(dplyr)    # alternatively, this also loads %>%
 library(ggplot2)
+library(xts)
 library(tsbox)
 library(readxl)
 library(slider)
+library(xts)
 library(tidyr)
-library(devtools)
 
 source("harbinger/examples/load_harbinger.R")
 folder_path <- "harbinger/R"
@@ -18,9 +14,6 @@ files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE)
 for (file in files) {
   source(file)
 }
-load_library("reticulate")
-source("harbinger/examples/ts_tlstm.R")
-reticulate::source_python("harbinger/examples/ts_tlstm.py")
 load_harbinger() 
 data(har_examples)
 
@@ -39,34 +32,26 @@ currencies_name_columns <- c(
 )
 
 currencies <- currencies[currencies_name_columns]
-
-get_break_dates <- function(breakpoints_term, currencies){
-  return (currencies$Data[na.omit(breakpoints_term)])
-}
 df_results <- NULL
 
-# 
 name_stocks <- ""
-accuracy <- c(0)
 sensitivity <- c(0)
 specificity <- c(0)
 precision <- c(0)
 recall <- c(0)
 f1 <- c(0)
-df_results <- data.frame(name_stocks, f1, accuracy, precision, recall)
+df_results <- data.frame(name_stocks, f1, precision, recall)
+
+model <- change_point(sw=90)
 
 for (name_column in currencies_name_columns){
   if(name_column == experiment || name_column == "Data"){
     next
   }
-  serie_df <- data.frame(time=currencies$Data, serie=currencies[[name_column]])
-  
-  
-  
-  model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
-  model <- fit(model, serie_df$serie)
-  
-  detection <- detect(model, serie_df$serie)
+  df <- data.frame(time=currencies$Data, serie=currencies[[name_column]])
+  reference <-currencies[c('Data',experiment)]
+  model <- fit(model, df$serie)
+  detection <- detect(model, df$serie)
   rf_boolean_list <- as.logical(reference$Event)
   soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=15))
   df_results <- add_row(df_results, name_stocks= name_column,
@@ -75,5 +60,6 @@ for (name_column in currencies_name_columns){
                         recall=soft_evaluate$recall)
 }
 
-file <- sprintf("files/stocks-soft-lstm-currencies.csv" )
+file <- sprintf("files/stocks-currencies-soft-scp.csv" )
 write.csv(df_results, file)
+

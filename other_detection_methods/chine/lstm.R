@@ -24,24 +24,27 @@ reticulate::source_python("harbinger/examples/ts_tlstm.py")
 load_harbinger() 
 data(har_examples)
 
+
 experiment = "Event"
-currencies <- read_xlsx("dataset/Base de Dados Consolidada base line.xlsx",sheet="Currency")
+stocks <- read_xlsx("dataset/Base de Dados Consolidada base line.xlsx",sheet="Chine")
 method_emd <- "CEEMD"
 
-currencies_name_columns <- c(
+
+stocks_chine_name_columns <- c(
   "Data",
   experiment,
-  "USD/BRL",
-  "EUR/BRL",
-  "CNY/BRL",
-  "CLP/BRL",
-  "ARS/BRL"
+  "CSI 1000",
+  "Shangai",
+  "SZSE Component",
+  "HSCE",
+  "A50"
 )
 
-currencies <- currencies[currencies_name_columns]
 
-get_break_dates <- function(breakpoints_term, currencies){
-  return (currencies$Data[na.omit(breakpoints_term)])
+stocks <- stocks[stocks_chine_name_columns]
+
+get_break_dates <- function(breakpoints_term, stocks){
+  return (stocks$Data[na.omit(breakpoints_term)])
 }
 df_results <- NULL
 
@@ -55,11 +58,11 @@ recall <- c(0)
 f1 <- c(0)
 df_results <- data.frame(name_stocks, f1, accuracy, precision, recall)
 
-for (name_column in currencies_name_columns){
+for (name_column in stocks_chine_name_columns){
   if(name_column == experiment || name_column == "Data"){
     next
   }
-  serie_df <- data.frame(time=currencies$Data, serie=currencies[[name_column]])
+  serie_df <- data.frame(time=stocks$Data, serie=stocks[[name_column]])
   
   
   
@@ -75,5 +78,5 @@ for (name_column in currencies_name_columns){
                         recall=soft_evaluate$recall)
 }
 
-file <- sprintf("files/stocks-soft-lstm-currencies.csv" )
+file <- sprintf("files/stocks-soft-lstm-chine.csv" )
 write.csv(df_results, file)
