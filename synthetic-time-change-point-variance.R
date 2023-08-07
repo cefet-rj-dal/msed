@@ -2,7 +2,9 @@ source("multi-scale-detect.R")
 source("load_time_series.R")
 source("harbinger-v1.R")
 
-library(magrittr) 
+library(magrittr)
+library(xts)
+
 library(dplyr)   
 library(ggplot2)
 library(tsbox)
@@ -17,8 +19,6 @@ files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE)
 for (file in files) {
   source(file)
 }
-
-data(har_examples)
 
 limit_ri_sup <- 2.14 # limite sup definido para obtenção do RI
 limit_ri_inf <- 1.50 # limite inf definido para obtenção do RI
@@ -92,20 +92,17 @@ soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = 
 sprintf("Method GARCH: F1 %s | Precision %s | Recall %s to softwindow 20", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
 
 ##### Method Seminal Change Point
-model <- change_point(sw=90)
-model <- fit(model, serie_df$serie)
-detection <- detect(model, serie_df$serie)
-print(detection |> dplyr::filter(event==TRUE))
-rf_boolean_list <- as.logical(reference$value)
-soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=5))
 
-sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 5", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+events_scp <- evtdet.seminalChangePoint2(serie_df, w=90,mdl=linreg,na.action=na.omit)
+metric=c("accuracy","sensitivity","specificity","precision",
+         "recall","F1","balanced_accuracy")
+print(evtplot(serie_df, events_scp,reference))
 
+metrics <- soft_evaluate(events_scp, reference, k=5)
+sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 5", metrics['F1'], metrics['precision'], metrics['recall'])
 
-soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=10))
-sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 10", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
+metrics <-  soft_evaluate(events_scp, reference, k =10)
+sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 10", metrics['F1'], metrics['precision'], metrics['recall'])
 
-
-soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=20))
-sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 20", soft_evaluate$F1, soft_evaluate$precision, soft_evaluate$recall)
-
+metrics <-  soft_evaluate(events_scp, reference, k =20)
+sprintf("Method SCP: F1 %s | Precision %s | Recall %s to softwindow 20",metrics['F1'], metrics['precision'], metrics['recall'])

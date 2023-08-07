@@ -1,14 +1,12 @@
-#install.packages('devtools')
-#devtools::install_github("cefet-rj-dal/harbinger", force = TRUE)
-source("multi-scale-detect.R")
-library(magrittr) 
-library(dplyr)   
+library(magrittr) # needs to be run every time you start R and want to use %>%
+library(dplyr)    # alternatively, this also loads %>%
 library(ggplot2)
+library(xts)
 library(tsbox)
 library(readxl)
 library(slider)
+library(xts)
 library(tidyr)
-library(devtools)
 
 source("harbinger/examples/load_harbinger.R")
 folder_path <- "harbinger/R"
@@ -16,37 +14,28 @@ files <- list.files(folder_path, pattern = "\\.R$", full.names = TRUE)
 for (file in files) {
   source(file)
 }
-load_library("reticulate")
-source("harbinger/examples/ts_tlstm.R")
-reticulate::source_python("harbinger/examples/ts_tlstm.py")
 load_harbinger() 
 data(har_examples)
 
-
 experiment = "Event"
-stocks <- read_xlsx("dataset/Base de Dados Consolidada base line.xlsx",sheet="Chine")
+stocks <- read_xlsx("dataset/Base de Dados Consolidada base line.xlsx",sheet="EUA")
 method_emd <- "CEEMD"
 
 
-stocks_chine_name_columns <- c(
-  "Data",
+stocks_name_columns <- c (
+  'Data',
   experiment,
-  "CSI 1000",
-  "Shangai",
-  "SZSE Component",
-  "HSCE",
-  "A50"
+  "DJI",
+  "Nasdaq",
+  "SP500",
+  "DJ Composite",
+  "USSMALLCAP2000"
 )
 
 
-stocks <- stocks[stocks_chine_name_columns]
-
-get_break_dates <- function(breakpoints_term, stocks){
-  return (stocks$Data[na.omit(breakpoints_term)])
-}
+stocks <- stocks[stocks_name_columns]
 df_results <- NULL
 
-# 
 name_stocks <- ""
 sensitivity <- c(0)
 specificity <- c(0)
@@ -54,18 +43,17 @@ precision <- c(0)
 recall <- c(0)
 f1 <- c(0)
 df_results <- data.frame(name_stocks, f1, precision, recall)
-model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
-for (name_column in stocks_chine_name_columns){
+
+model <- change_point(sw=10)
+
+for (name_column in stocks_name_columns){
   if(name_column == experiment || name_column == "Data"){
     next
   }
-  serie_df <- data.frame(time=stocks$Data, serie=stocks[[name_column]])
-  
+  df <- data.frame(time=stocks$Data, serie=stocks[[name_column]])
   reference <-stocks[c('Data',experiment)]
-  
-  model <- fit(model, serie_df$serie)
-  
-  detection <- detect(model, serie_df$serie)
+  model <- fit(model, df$serie)
+  detection <- detect(model, df$serie)
   rf_boolean_list <- as.logical(reference$Event)
   soft_evaluate <- evaluate(model, detection$event, rf_boolean_list, evaluation = soft_evaluation(sw=15))
   df_results <- add_row(df_results, name_stocks= name_column,
@@ -74,5 +62,5 @@ for (name_column in stocks_chine_name_columns){
                         recall=soft_evaluate$recall)
 }
 
-file <- sprintf("files/stocks-soft-lstm-chine.csv" )
+file <- sprintf("files/stocks-usa-soft.csv" )
 write.csv(df_results, file)

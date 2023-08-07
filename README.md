@@ -8,30 +8,34 @@
 
 
 
-*** Method MSED ***:
+## Method MSED:
 
 Multiscale Event Detect
-'''Args:
-    serie (Pandas Datafrmae): Dataframe with time series
-    noise.amp (number): Amplitude of white noise to use in denoising algorithm
-    frequency_date (number): Time frequency time series default 12 months
-    start_date (date): Initial date of time series
-    stop_rule (string): As quoted from the EMD package documentation: ”The stop rule of sifting. The
-            type1 stop rule indicates that absolute values of envelope mean must be less than
-            the user-specified tolerance level in the sense that the local average of upper and
-            lower envelope is zero. The stopping rules type2, type3, type4 and type5 are the
-            stopping rules given by equation (5.5) of Huang et al. (1998), equation (11a),
-            equation (11b) and S stoppage of Huang and Wu (2008), respectively.” default: type1
-    soft_window (number): size window of soft evaluate default: 15
-    trials (number): Number of times to run EMD default:100
-    limit_ri_sup & limit_ri_inf (number) : Upper and lower limits of ratio approach in the energy approach filtering method | default (2.14,1.50)
-    rf_dataframe: Dataframe with labels obtained from the EPU series
-    type_events (list) : types of events that will be obtained
-Returns:
-    Pandas Dataframe: Metrics F1, Precision and Recall'''
+## Args:
+- **serie (Datafrmae)**: Dataframe with time series
+- **noise.amp (number)**: Amplitude of white noise to use in denoising algorithm
+- **frequency_date (number)**: Time frequency time series default 12 months
+- **start_date (date)**: Initial date of time series
+- **stop_rule (string)**: As quoted from the EMD package documentation:
+   - ```The stop rule of sifting. The type1 stop rule indicates that absolute values of envelope mean must be less thanthe user-specified tolerance level in the sense that the local average of upper andlower envelope is zero. The stopping rules type2, type3, type4 and type5 are the stopping rules given by equation (5.5) of Huang et al. (1998), equation (11a),equation (11b) and S stoppage of Huang and Wu (2008), respectively.” default: type1```
+- **soft_window (number)**: size window of soft evaluate default: 15
+- **trials (number)**: Number of times to run EMD default:100
+- **limit_ri_sup & limit_ri_inf (number)** : Upper and lower limits of ratio approach in the energy approach filtering method | default (2.14,1.50)
+- **rf_dataframe**: Dataframe with labels obtained from the EPU series
+- **type_events (list)** : types of events that will be obtained
+## Returns:
+- **Dataframe**: Metrics F1, Precision and Recall
 
 
 
-*** Run method ***
+### Run Method MSED
 
-The files brasil-stocks.R, chine-stocks.R, currencies.R, and usa-stocks.R must be executed to obtain the results presented in the article.
+The files ```brasil-stocks.R```, ```chine-stocks.R```, ```currencies.R```, and ```usa-stocks.R``` must be executed to obtain the results presented in the article.
+
+### Run others methods
+
+The files with the code that generates the results of the other event detection methods are in the other_detection_methods folder
+
+## Run synthetic series 
+
+Run files ```syntetic_examples_anomaly.R``` and ```synthetic-time-change-point-variance.R```

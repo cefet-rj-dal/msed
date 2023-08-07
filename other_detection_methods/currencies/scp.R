@@ -42,7 +42,7 @@ recall <- c(0)
 f1 <- c(0)
 df_results <- data.frame(name_stocks, f1, precision, recall)
 
-model <- change_point(sw=90)
+model <- change_point(sw=10)
 
 for (name_column in currencies_name_columns){
   if(name_column == experiment || name_column == "Data"){

@@ -1,7 +1,6 @@
 #install.packages('devtools')
 #devtools::install_github("cefet-rj-dal/harbinger", force = TRUE)
 source("multi-scale-detect.R")
-source("load_time_series.R")
 
 library(magrittr) 
 library(dplyr)   
@@ -47,23 +46,21 @@ df_results <- NULL
 
 # 
 name_stocks <- ""
-accuracy <- c(0)
 sensitivity <- c(0)
 specificity <- c(0)
 precision <- c(0)
 recall <- c(0)
 f1 <- c(0)
-df_results <- data.frame(name_stocks, f1, accuracy, precision, recall)
+df_results <- data.frame(name_stocks, f1, precision, recall)
 
+
+model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
 for (name_column in stocks_name_columns){
   if(name_column == experiment || name_column == "Data"){
     next
   }
   serie_df <- data.frame(time=stocks$Data, serie=stocks[[name_column]])
-  
-  
-  
-  model <- har_tsreg_sw(ts_tlstm(ts_diff(), input_size=4, epochs=4000))
+  reference <-stocks[c('Data',experiment)]
   model <- fit(model, serie_df$serie)
   
   detection <- detect(model, serie_df$serie)
